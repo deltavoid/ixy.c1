@@ -53,6 +53,7 @@ static void init_link(struct ixgbe_device* dev) {
 	// datasheet wants us to wait for the link here, but we can continue and wait afterwards
 }
 
+
 static void start_rx_queue(struct ixgbe_device* dev, int queue_id) {
 	debug("starting rx queue %d", queue_id);
 	struct ixgbe_rx_queue* queue = ((struct ixgbe_rx_queue*)(dev->rx_queues)) + queue_id;
@@ -101,6 +102,7 @@ static void start_tx_queue(struct ixgbe_device* dev, int queue_id) {
 	wait_set_reg32(dev->addr, IXGBE_TXDCTL(queue_id), IXGBE_TXDCTL_ENABLE);
 }
 
+
 // see section 4.6.7
 // it looks quite complicated in the data sheet, but it's actually really easy because we don't need fancy features
 static void init_rx(struct ixgbe_device* dev) {
@@ -128,6 +130,7 @@ static void init_rx(struct ixgbe_device* dev) {
 		// drop_en causes the nic to drop packets if no rx descriptors are available instead of buffering them
 		// a single overflowing queue can fill up the whole buffer and impact operations if not setting this flag
 		set_flags32(dev->addr, IXGBE_SRRCTL(i), IXGBE_SRRCTL_DROP_EN);
+		
 		// setup descriptor ring, see section 7.1.9
 		uint32_t ring_size_bytes = NUM_RX_QUEUE_ENTRIES * sizeof(union ixgbe_adv_rx_desc);
 		struct dma_memory mem = memory_allocate_dma(ring_size_bytes, true);
@@ -141,6 +144,7 @@ static void init_rx(struct ixgbe_device* dev) {
 		// set ring to empty at start
 		set_reg32(dev->addr, IXGBE_RDH(i), 0);
 		set_reg32(dev->addr, IXGBE_RDT(i), 0);
+		
 		// private data for the driver, 0-initialized
 		struct ixgbe_rx_queue* queue = ((struct ixgbe_rx_queue*)(dev->rx_queues)) + i;
 		queue->num_entries = NUM_RX_QUEUE_ENTRIES;
@@ -208,6 +212,7 @@ static void init_tx(struct ixgbe_device* dev) {
 	set_reg32(dev->addr, IXGBE_DMATXCTL, IXGBE_DMATXCTL_TE);
 }
 
+
 static void wait_for_link(const struct ixgbe_device* dev) {
 	info("Waiting for link...");
 	int32_t max_wait = 10000000; // 10 seconds in us
@@ -222,6 +227,11 @@ static void wait_for_link(const struct ixgbe_device* dev) {
 
 
 // see section 4.6.3
+// init_link(dev);
+// init_rx(dev);
+// init_tx(dev);
+// start_rx_queue(dev, i);
+// start_tx_queue(dev, i);
 static void reset_and_init(struct ixgbe_device* dev) {
 	info("Resetting device %s", dev->ixy.pci_addr);
 	// section 4.6.3.1 - disable all interrupts
@@ -272,6 +282,9 @@ static void reset_and_init(struct ixgbe_device* dev) {
 	wait_for_link(dev);
 }
 
+
+// pci_map_resource(pci_addr);
+
 struct ixy_device* ixgbe_init(const char* pci_addr, uint16_t rx_queues, uint16_t tx_queues) {
 	if (getuid()) {
 		warn("Not running as root, this will probably fail");
@@ -292,10 +305,13 @@ struct ixy_device* ixgbe_init(const char* pci_addr, uint16_t rx_queues, uint16_t
 	dev->ixy.read_stats = ixgbe_read_stats;
 	dev->ixy.set_promisc = ixgbe_set_promisc;
 	dev->ixy.get_link_speed = ixgbe_get_link_speed;
+	
 	dev->addr = pci_map_resource(pci_addr);
 	dev->rx_queues = calloc(rx_queues, sizeof(struct ixgbe_rx_queue) + sizeof(void*) * MAX_RX_QUEUE_ENTRIES);
 	dev->tx_queues = calloc(tx_queues, sizeof(struct ixgbe_tx_queue) + sizeof(void*) * MAX_TX_QUEUE_ENTRIES);
+	
 	reset_and_init(dev);
+	
 	return &dev->ixy;
 }
 

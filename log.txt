@@ -1,0 +1,27 @@
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o ixy-pktgen.o -c ixy-pktgen.c
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o device.o -c device.c
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o ixgbe.o -c ixgbe.c
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o memory.o -c memory.c
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o pci.o -c pci.c
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o stats.o -c stats.c
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o virtio.o -c virtio.c
+/usr/bin/cc -o ixy-pktgen ixy-pktgen.o device.o ixgbe.o memory.o pci.o stats.o virtio.o -rdynamic 
+/usr/bin/cc -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11 -o ixy-fwd.o -c ixy-fwd.c
+/usr/bin/cc -o ixy-fwd ixy-fwd.o device.o ixgbe.o memory.o pci.o stats.o virtio.o -rdynamic 
+
+
+sudo ../setup-hugetlbfs.sh
+sudo ./ixy-pktgen 0000:00:08.0
+[DEBUG] pci.c:58 pci_open_resource(): Opening PCI resource at /sys/bus/pci/devices/0000:00:08.0/config
+[DEBUG] pci.c:46 pci_map_resource(): Mapping PCI resource at /sys/bus/pci/devices/0000:00:08.0/resource0
+[DEBUG] pci.c:19 remove_driver(): no driver loaded
+[DEBUG] ixgbe.c:125 init_rx(): initializing rx queue 0
+[DEBUG] ixgbe.c:139 init_rx(): rx ring 0 phy addr:  0x000174A00000
+[DEBUG] ixgbe.c:140 init_rx(): rx ring 0 virt addr: 0x7F79AE000000
+[DEBUG] ixgbe.c:180 init_tx(): initializing tx queue 0
+[DEBUG] ixgbe.c:189 init_tx(): tx ring 0 phy addr:  0x000174400000
+[DEBUG] ixgbe.c:190 init_tx(): tx ring 0 virt addr: 0x7F79ADE00000
+[DEBUG] ixgbe.c:57 start_rx_queue(): starting rx queue 0
+[DEBUG] ixgbe.c:91 start_tx_queue(): starting tx queue 0
+Makefile:39: recipe for target 'run' failed
+make: *** [run] 中断
