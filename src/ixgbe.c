@@ -15,8 +15,11 @@ const char* driver_name = "ixy-ixgbe";
 const int MAX_RX_QUEUE_ENTRIES = 4096;
 const int MAX_TX_QUEUE_ENTRIES = 4096;
 
-const int NUM_RX_QUEUE_ENTRIES = 512;
-const int NUM_TX_QUEUE_ENTRIES = 512;
+// const int NUM_RX_QUEUE_ENTRIES = 512;
+// const int NUM_TX_QUEUE_ENTRIES = 512;
+
+const int NUM_RX_QUEUE_ENTRIES = 256;
+const int NUM_TX_QUEUE_ENTRIES = 256;
 
 const int TX_CLEAN_BATCH = 32;
 
