@@ -93,6 +93,7 @@ int main(int argc, char* argv[]) {
 	//  ixy_tx_batch_busy_wait(dev, 0, bufs, BATCH_SIZE);
 	//  ixy_read_stats(dev, &stats);
 	while (true) {
+		info("loop");
 		// we cannot immediately recycle packets, we need to allocate new packets every time
 		// the old packets might still be used by the NIC: tx is async
 		pkt_buf_alloc_batch(mempool, bufs, BATCH_SIZE);
