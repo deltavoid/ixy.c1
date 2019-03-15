@@ -3,8 +3,9 @@
 NIC     ?= 0000:00:08.0
 
 CC      := /usr/bin/cc
+#CC      := x86_64-linux-musl-gcc 
 CFLAGS  := -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11
-LDFLAGS := -rdynamic 
+LDFLAGS := -static -rdynamic 
 
 
 
@@ -41,4 +42,4 @@ run: build
 
 
 clean:
-	rm *.o $(IXY_PKTGEN_NAME) $(IXY_FORWARD_NAME)
+	rm *.o Makefile.dep $(IXY_PKTGEN_NAME) $(IXY_FORWARD_NAME)
