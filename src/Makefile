@@ -2,10 +2,10 @@
 
 NIC     ?= 0000:00:08.0
 
-CC      := /usr/bin/cc
-#CC      := x86_64-linux-musl-gcc 
+#CC      := /usr/bin/cc
+CC      := x86_64-linux-musl-gcc 
 CFLAGS  := -g -O2 -march=native -fomit-frame-pointer -std=c11 -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wformat=2 -std=gnu11
-LDFLAGS := -static -rdynamic 
+LDFLAGS := -static
 
 
 
@@ -37,7 +37,7 @@ Makefile.dep:
 
 
 run: build
-	sudo ../setup-hugetlbfs.sh
+#	sudo ../setup-hugetlbfs.sh
 	sudo ./$(IXY_PKTGEN_NAME) $(NIC)
 
 
