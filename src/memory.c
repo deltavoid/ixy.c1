@@ -9,25 +9,29 @@
 #include <sys/mman.h>
 
 
-uint8_t memory_pool[(1 << 20) * 100];
-uint8_t* memory_pool_index = NULL;
+//uint8_t memory_pool[(1 << 20) * 40];
+//uint8_t* memory_pool_index = NULL;
 
 
-// translate a virtual address to a physical one via /proc/self/pagemap
+// // translate a virtual address to a physical one via /proc/self/pagemap
+// static uintptr_t virt_to_phys(void* virt) {
+// 	long pagesize = sysconf(_SC_PAGESIZE);
+// 	int fd = check_err(open("/proc/self/pagemap", O_RDONLY), "getting pagemap");
+// 	// pagemap is an array of pointers for each normal-sized page
+// 	check_err(lseek(fd, (uintptr_t) virt / pagesize * sizeof(uintptr_t), SEEK_SET), "getting pagemap");
+// 	uintptr_t phy = 0;
+// 	check_err(read(fd, &phy, sizeof(phy)), "translating address");
+// 	close(fd);
+// 	if (!phy) {
+// 		error("failed to translate virtual address %p to physical address", virt);
+// 	}
+// 	//info("phy: %x", phy);
+// 	// bits 0-54 are the page number
+// 	return (phy & 0x7fffffffffffffULL) * pagesize + ((uintptr_t) virt) % pagesize;
+// }
+
 static uintptr_t virt_to_phys(void* virt) {
-	long pagesize = sysconf(_SC_PAGESIZE);
-	int fd = check_err(open("/proc/self/pagemap", O_RDONLY), "getting pagemap");
-	// pagemap is an array of pointers for each normal-sized page
-	check_err(lseek(fd, (uintptr_t) virt / pagesize * sizeof(uintptr_t), SEEK_SET), "getting pagemap");
-	uintptr_t phy = 0;
-	check_err(read(fd, &phy, sizeof(phy)), "translating address");
-	close(fd);
-	if (!phy) {
-		error("failed to translate virtual address %p to physical address", virt);
-	}
-	//info("phy: %x", phy);
-	// bits 0-54 are the page number
-	return (phy & 0x7fffffffffffffULL) * pagesize + ((uintptr_t) virt) % pagesize;
+	return virt;
 }
 
 // static uint32_t huge_pg_id;
@@ -66,18 +70,45 @@ static uintptr_t virt_to_phys(void* virt) {
 // 	};
 // }
 
+// struct dma_memory memory_allocate_dma(size_t size, bool require_contiguous) {
+
+// 	if  (memory_pool_index == NULL)  memory_pool_index = memory_pool;
+	
+// 	if  (((unsigned long)memory_pool_index & ((1 << 12) - 1)) != 0)
+//         memory_pool_index = (uint8_t*)((((unsigned long)(memory_pool_index) >> 12) + 1) << 12);
+
+// 	info("memory_pool_index: 0x%012lX  phy address: 0x%012lX", memory_pool_index, virt_to_phys(memory_pool_index));
+
+// 	uint8_t* start = memory_pool_index;
+// 	for (uint32_t i = 0; i < size; i += 1 << 12){
+// 		*(start + i) = 0;
+// 		debug("prefetch page at 0x%012lX", start + i);
+// 	}
+	    
+// 	memory_pool_index += size;
+
+
+// 	return (struct dma_memory) {
+// 		.virt = start,
+// 		.phy = virt_to_phys(start)
+// 	};
+// }
+
 struct dma_memory memory_allocate_dma(size_t size, bool require_contiguous) {
 
-	if  (memory_pool_index == NULL)  memory_pool_index = memory_pool;
-	
+	uint8_t* memory_pool_index = (uint8_t*)malloc(size + 4096);
+
 	if  (((unsigned long)memory_pool_index & ((1 << 12) - 1)) != 0)
         memory_pool_index = (uint8_t*)((((unsigned long)(memory_pool_index) >> 12) + 1) << 12);
 
-	info("memroy_pool_index: %x  phy address: %x", memory_pool_index, virt_to_phys(memory_pool_index));
+	info("memory_pool_index: 0x%012lX  phy address: 0x%012lX", memory_pool_index, virt_to_phys(memory_pool_index));
 
 	uint8_t* start = memory_pool_index;
-	for (uint32_t i = 0; i < size; i += 1 << 12)
-	    *(start + i) = 0;
+	for (uint32_t i = 0; i < size; i += 1 << 12){
+		*(start + i) = 0;
+		debug("prefetch page at 0x%012lX", start + i);
+	}
+	    
 	memory_pool_index += size;
 
 
@@ -101,11 +132,16 @@ struct mempool* memory_allocate_mempool(uint32_t num_entries, uint32_t entry_siz
 		error("entry size must be a divisor of the huge page size (%d)", HUGE_PAGE_SIZE);
 	}
 	struct mempool* mempool = (struct mempool*) malloc(sizeof(struct mempool) + num_entries * sizeof(uint32_t));
+	
 	struct dma_memory mem = memory_allocate_dma(num_entries * entry_size, false);
+	debug("finish memory_allocate_dma");
+
 	mempool->num_entries = num_entries;
 	mempool->buf_size = entry_size;
 	mempool->base_addr = mem.virt;
 	mempool->free_stack_top = num_entries;
+	debug("finish mempool init");
+
 	for (uint32_t i = 0; i < num_entries; i++) {
 		mempool->free_stack[i] = i;
 		struct pkt_buf* buf = (struct pkt_buf*) (((uint8_t*) mempool->base_addr) + i * entry_size);
@@ -116,6 +152,8 @@ struct mempool* memory_allocate_mempool(uint32_t num_entries, uint32_t entry_siz
 		buf->mempool = mempool;
 		buf->size = 0;
 	}
+
+	debug("return mempool");
 	return mempool;
 }
 

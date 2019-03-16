@@ -88,6 +88,13 @@ int main(int argc, char* argv[]) {
 	// array of bufs sent out in a batch
 	struct pkt_buf* bufs[BATCH_SIZE];
 
+
+
+    debug("finish init in main");
+	while (true);
+
+
+
 	// tx loop
 	//  pkt_buf_alloc_batch(mempool, bufs, BATCH_SIZE);
 	//  ixy_tx_batch_busy_wait(dev, 0, bufs, BATCH_SIZE);

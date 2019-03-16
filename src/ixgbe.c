@@ -67,10 +67,23 @@ static void start_rx_queue(struct ixgbe_device* dev, int queue_id) {
 	// this has to be fixed if jumbo frames are to be supported
 	// mempool should be >= the number of rx and tx descriptors for a forwarding application
 	uint32_t mempool_size = NUM_RX_QUEUE_ENTRIES + NUM_TX_QUEUE_ENTRIES;
-	queue->mempool = memory_allocate_mempool(mempool_size < 4096 ? 4096 : mempool_size, 2048);
-	if (queue->num_entries & (queue->num_entries - 1)) {
-		error("number of queue entries must be a power of 2");
-	}
+	
+	//queue->mempool = memory_allocate_mempool(mempool_size < 4096 ? 4096 : mempool_size, 2048);
+	queue->mempool = memory_allocate_mempool(mempool_size < 2048 ? 2048 : mempool_size, 2048);
+    debug("finish queue->mempool");
+	
+	debug("queue->num_entries: %d", queue->num_entries);
+
+	// if (queue->num_entries & (queue->num_entries - 1)) {
+	// 	debug("before error");
+	// 	error("number of queue entries must be a power of 2");
+	// 	debug("after error");
+	// }
+
+	info("init rxd");
+
+	debug("start init rxd");
+
 	for (int i = 0; i < queue->num_entries; i++) {
 		volatile union ixgbe_adv_rx_desc* rxd = queue->descriptors + i;
 		struct pkt_buf* buf = pkt_buf_alloc(queue->mempool);
@@ -82,6 +95,9 @@ static void start_rx_queue(struct ixgbe_device* dev, int queue_id) {
 		// we need to return the virtual address in the rx function which the descriptor doesn't know by default
 		queue->virtual_addresses[i] = buf;
 	}
+	debug("finish init rxd");
+
+
 	// enable queue and wait if necessary
 	set_flags32(dev->addr, IXGBE_RXDCTL(queue_id), IXGBE_RXDCTL_ENABLE);
 	wait_set_reg32(dev->addr, IXGBE_RXDCTL(queue_id), IXGBE_RXDCTL_ENABLE);
@@ -94,9 +110,11 @@ static void start_rx_queue(struct ixgbe_device* dev, int queue_id) {
 static void start_tx_queue(struct ixgbe_device* dev, int queue_id) {
 	debug("starting tx queue %d", queue_id);
 	struct ixgbe_tx_queue* queue = ((struct ixgbe_tx_queue*)(dev->tx_queues)) + queue_id;
-	if (queue->num_entries & (queue->num_entries - 1)) {
-		error("number of queue entries must be a power of 2");
-	}
+
+	// if (queue->num_entries & (queue->num_entries - 1)) {
+	// 	error("number of queue entries must be a power of 2");
+	// }
+	
 	// tx queue starts out empty
 	set_reg32(dev->addr, IXGBE_TDH(queue_id), 0);
 	set_reg32(dev->addr, IXGBE_TDT(queue_id), 0);
@@ -240,6 +258,8 @@ static void reset_and_init(struct ixgbe_device* dev) {
 	// section 4.6.3.1 - disable all interrupts
 	set_reg32(dev->addr, IXGBE_EIMC, 0x7FFFFFFF);
 
+	debug("set first reg");
+
 	// section 4.6.3.2
 	set_reg32(dev->addr, IXGBE_CTRL, IXGBE_CTRL_RST_MASK);
 	wait_clear_reg32(dev->addr, IXGBE_CTRL, IXGBE_CTRL_RST_MASK);
@@ -262,6 +282,10 @@ static void reset_and_init(struct ixgbe_device* dev) {
 	// section 4.6.5 - statistical counters
 	// reset-on-read registers, just read them once
 	ixgbe_read_stats(&dev->ixy, NULL);
+	struct device_stats stats_temp;
+	stats_init(&stats_temp, NULL);
+	ixgbe_read_stats(&dev->ixy, &stats_temp);
+	print_stats(&stats_temp);
 
 	// section 4.6.7 - init rx
 	init_rx(dev);
@@ -277,9 +301,13 @@ static void reset_and_init(struct ixgbe_device* dev) {
 		start_tx_queue(dev, i);
 	}
 
+	debug("finish queue");
+
 	// skip last step from 4.6.3 - don't want interrupts
 	// finally, enable promisc mode by default, it makes testing less annoying
 	ixgbe_set_promisc(&dev->ixy, true);
+
+	debug("finish set promisc");
 
 	// wait for some time for the link to come up
 	wait_for_link(dev);
@@ -309,7 +337,10 @@ struct ixy_device* ixgbe_init(const char* pci_addr, uint16_t rx_queues, uint16_t
 	dev->ixy.set_promisc = ixgbe_set_promisc;
 	dev->ixy.get_link_speed = ixgbe_get_link_speed;
 	
+	//dev->addr = pci_map_resource(pci_addr);
 	dev->addr = pci_map_resource(pci_addr);
+	info("dev->addr: %x", dev->addr);
+
 	dev->rx_queues = calloc(rx_queues, sizeof(struct ixgbe_rx_queue) + sizeof(void*) * MAX_RX_QUEUE_ENTRIES);
 	dev->tx_queues = calloc(tx_queues, sizeof(struct ixgbe_tx_queue) + sizeof(void*) * MAX_TX_QUEUE_ENTRIES);
 	

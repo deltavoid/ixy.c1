@@ -10,9 +10,9 @@ LDFLAGS := -static
 
 
 IXY_PKTGEN_NAME  := ixy-pktgen
-IXY_PKTGEN_OBJS  := ixy-pktgen.o device.o ixgbe.o memory.o pci.o stats.o virtio.o
+IXY_PKTGEN_OBJS  := ixy-pktgen.o device.o ixgbe.o memory.o pci.o stats.o 
 IXY_FORWARD_NAME := ixy-fwd
-IXY_FORWARD_OBJS := ixy-fwd.o device.o ixgbe.o memory.o pci.o stats.o virtio.o
+IXY_FORWARD_OBJS := ixy-fwd.o device.o ixgbe.o memory.o pci.o stats.o 
 
 
 
